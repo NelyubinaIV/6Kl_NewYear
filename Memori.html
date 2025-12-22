@@ -21,7 +21,34 @@
       align-items: center;
     }
 
-    .header {
+    
+    /* --- Встроенный режим (когда мемори открыто в iframe внутри модалки) --- */
+    body.embedded {
+      min-height: auto;
+      padding: 10px;
+      align-items: stretch;
+    }
+    body.embedded .header {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    body.embedded .scoreboard {
+      width: 100%;
+      max-width: 480px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    body.embedded .game-grid {
+      width: 100%;
+      max-width: 480px;
+      padding: 0;
+      margin: 0 auto 14px;
+      gap: 12px;
+    }
+    body.embedded .controls {
+      margin-bottom: 10px;
+    }
+.header {
       text-align: center;
       color: white;
       margin-bottom: 20px;
@@ -88,6 +115,16 @@
       cursor: pointer;
       perspective: 1000px;
       min-height: 120px;
+    }
+
+    .card, button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .card {
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .card-inner {
@@ -194,14 +231,6 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       animation: modalPop 0.3s ease;
     }
-	/* Крупный текст вопроса (для всех вопросов) */
-	#quizQuestion {
-	  font-size: 1.9em;   /* сделай 2em, если хочешь ровно как заголовок */
-	  font-weight: 800;
-	  line-height: 1.2;
-	  margin-bottom: 10px;
-	}
-
 
     @keyframes modalPop {
       from {
@@ -263,7 +292,6 @@
       .game-grid {
         gap: 10px;
         padding: 0 10px;
-		#quizQuestion { font-size: 1.4em; }
       }
 
       .header h1 {
@@ -273,6 +301,36 @@
       .card-front {
         font-size: 2em;
       }
+    
+      .scoreboard {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .player {
+        width: 100%;
+        max-width: 520px;
+      }
+      .player .score {
+        font-size: 1.6em;
+      }
+      .card {
+        min-height: 84px;
+      }
+      .controls {
+        width: 100%;
+        gap: 10px;
+      }
+      button {
+        width: 100%;
+      }
+      .modal-content {
+        padding: 20px;
+        max-width: 92vw;
+      }
+      .quiz-options {
+        flex-direction: column;
+      }
+
     }
 
     .sr-only {
@@ -350,6 +408,9 @@
   </div>
 
   <script>
+    // Встроенный режим: если игра открыта внутри iframe (в модалке на главной странице)
+    try { if (window.self !== window.top) document.body.classList.add('embedded'); } catch(e) {}
+
     const animals = [
   { name: 'cat',       img: './1.png' },
   { name: 'dog',       img: './2.png' },
@@ -553,7 +614,7 @@
       announceStatus(text.textContent);
 	 // 👉 сообщаем "главной" странице, что игра на планшете завершена
   if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: 'tabletSuccess' }, '*');
+    window.parent.postMessage({ type: 'played' }, '*');
   }
 }
 
