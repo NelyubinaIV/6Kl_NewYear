@@ -21,13 +21,7 @@
             justify-content: center;
         }
 
-        
-        /* блокируем прокрутку фона, когда открыта любая модалка (особенно важно на телефоне) */
-        body.modal-open {
-            overflow: hidden !important;
-            touch-action: none;
-        }
-.game-container {
+        .game-container {
             display: flex;
             height: 100vh;
             max-width: 1400px;
@@ -383,22 +377,6 @@
 		overflow: hidden;             /* вместо overflow-y:auto — чтобы игра была видна */
 		animation: slideIn 0.3s ease;
 	}
-	/* --- PHONE / "Поиграть" модалка: делаем компактнее, чтобы мемори не была "во весь монитор" --- */
-	#playModal .modal-content{
-		width: min(96vw, 540px);
-		height: min(92vh, 920px);
-	}
-	#playModal .modal-iframe{
-		border-radius: 20px;
-		background: #111;
-	}
-	@media (max-width: 600px){
-		#playModal .modal-content{
-			width: 96vw;
-			height: 94vh;
-		}
-	}
-
 
 
         .modal-header {
@@ -613,33 +591,6 @@
                 padding-inline: 24px;
                 font-size: 20px;
             }
-        
-            /* модалки на телефоне — почти во весь экран, чтобы игра не была "в окошке" */
-            .modal-content {
-                width: 100vw;
-                height: 100vh;
-                border-radius: 0;
-                padding: 12px;
-            }
-            @supports (height: 100dvh) {
-                .modal-content { height: 100dvh; }
-            }
-            .modal-header {
-                font-size: 20px;
-                margin-bottom: 10px;
-            }
-            .modal-hint {
-                padding: 10px 12px;
-                font-size: 13px;
-                margin-bottom: 10px;
-            }
-            .modal-buttons { gap: 10px; }
-            .modal-btn {
-                min-width: 0;
-                padding: 12px 14px;
-                font-size: 14px;
-            }
-
         }
     </style>
 </head>
@@ -658,7 +609,7 @@
 
         <button class="menu-button" id="boardBtn" data-preview="board">
             <div class="menu-inner">
-                <div class="menu-icon"></div>
+                <div class="menu-icon">🧮</div>
                 <div class="menu-text">
                     <div class="menu-main-text">Работать у доски</div>
                     <div class="status-badge status-not-started" id="boardStatus">Не начато</div>
@@ -668,7 +619,7 @@
 
         <button class="menu-button" id="tabletBtn" data-preview="tablet">
             <div class="menu-inner">
-                <div class="menu-icon"></div>
+                <div class="menu-icon">💻</div>
                 <div class="menu-text">
                     <div class="menu-main-text">Работать на планшете</div>
                     <div class="status-badge status-not-started" id="tabletStatus">Не начато</div>
@@ -678,7 +629,7 @@
 
         <button class="menu-button" id="playBtn" data-preview="phone">
             <div class="menu-inner">
-                <div class="menu-icon"></div>
+                <div class="menu-icon">📱</div>
                 <div class="menu-text">
                     <div class="menu-main-text">Поиграть</div>
                     <div class="status-badge status-not-started" id="playStatus">Не начато</div>
@@ -707,21 +658,21 @@
 
 	  <!-- Превью для доски -->
 	  <div class="scene hidden" id="boardPreview">
-		<div class="classroom-main">🧮</div>
+		<div class="classroom-main"></div>
 		<div class="scene-title">Работа у доски</div>
 		<div class="classroom-caption">Выполни задания и получи подарок.</div>
 	  </div>
 
 	  <!-- Превью для планшета -->
 	  <div class="scene hidden" id="tabletPreview">
-		<div class="classroom-main">💻</div>
+		<div class="classroom-main"></div>
 		<div class="scene-title">Интерактив на планшете</div>
 		<div class="classroom-caption">Задания попрактикуют то, что было на уроке.</div>
 	  </div>
 
 	  <!-- Превью для телефона -->
 	  <div class="scene hidden" id="phonePreview">
-		<div class="classroom-main">📱</div>
+		<div class="classroom-main"></div>
 		<div class="scene-title">Перерыв с телефоном</div>
 		<div class="classroom-caption">Немного игры — и снова к учёбе!</div>
 	  </div>
@@ -871,7 +822,6 @@
     let tabletTried = false;
     let tabletCompleted = false;
     let played = false;
-    let playTried = false;
 	// Режим разработчика: true — можно тестировать бесконечно, false — как для детей
 const DEV_MODE = true;
 
@@ -947,27 +897,12 @@ const playCloseBtn = document.getElementById("playCloseBtn");
             boardCompleted,
             tabletTried,
             tabletCompleted,
-            playTried,
             played,
         };
         localStorage.setItem("kittenGameState", JSON.stringify(state));
     }
 
-    
-    /* ---------- УТИЛИТЫ ДЛЯ МОДАЛОК (чтобы на телефоне фон не "ездил") ---------- */
-    function openModal(modal) {
-        modal.classList.add("active");
-        document.body.classList.add("modal-open");
-    }
-
-    function closeModal(modal) {
-        modal.classList.remove("active");
-        if (!document.querySelector(".modal-overlay.active")) {
-            document.body.classList.remove("modal-open");
-        }
-    }
-
-function loadState() {
+    function loadState() {
         const saved = localStorage.getItem("kittenGameState");
         if (!saved) return;
         try {
@@ -976,7 +911,6 @@ function loadState() {
             boardCompleted = !!state.boardCompleted;
             tabletTried = !!state.tabletTried;
             tabletCompleted = !!state.tabletCompleted;
-            playTried = !!state.playTried;
             played = !!state.played;
         } catch (e) {
             console.warn("Ошибка чтения состояния:", e);
@@ -1005,21 +939,14 @@ function loadState() {
     }
 
     function updateProgress() {
-        // общий прогресс: 3 активности (доска, планшет, игра)
-        // Логика: не начато = 0, в процессе = 0.5, готово = 1
-        const items = [
-            { tried: boardTried, done: boardCompleted },
-            { tried: tabletTried, done: tabletCompleted },
-            { tried: playTried, done: played }
-        ];
-
-        let points = 0;
-        for (const it of items) {
-            points += it.done ? 1 : (it.tried ? 0.5 : 0);
-        }
-        const percent = (points / items.length) * 100;
-        progressFill.style.width = percent + "%";
-    }
+    // прогресс от всех трёх активностей
+    let completedCount = 0;
+    if (boardCompleted) completedCount++;
+    if (tabletCompleted) completedCount++;
+    if (played) completedCount++; // ← добавлено
+    const percent = (completedCount / 3) * 100; // ← было /2
+    progressFill.style.width = percent + "%";
+}
 
     function updateUI() {
     // кнопки слева
@@ -1042,24 +969,31 @@ function loadState() {
 
     setStatus(boardStatus, boardTried, boardCompleted);
     setStatus(tabletStatus, tabletTried, tabletCompleted);
-    // игра: «В процессе» — как только открыли, «Готово» — когда игра сообщит о завершении
-    setStatus(playStatus, playTried, played, true);
+    setStatus(playStatus, played, played, true);
 
     updateProgress();
-    updateSanta();
 }
+    function updateUI() {
+        // ... всё, что у тебя уже есть ...
 
-    function updateSanta() {
+        setStatus(boardStatus, boardTried, boardCompleted);
+        setStatus(tabletStatus, tabletTried, tabletCompleted);
+        setStatus(playStatus, played, played, true);
+
+        updateProgress();
+        updateSanta();   // <--- вот это добавь
+    }
+   
+   function updateSanta() {
         if (!santaImage) return;
 
         let img = SANTA_WAIT_IMG;
         let text = "Дед Мороз ждёт, когда котик начнёт заниматься.";
 
-        const started = boardTried || tabletTried || playTried || played;
-        const allDone = boardCompleted && tabletCompleted && played;
+        const started = boardTried || tabletTried || played;
 
-        if (allDone) {
-            // всё «Готово» — радостный Дед Мороз с подарком
+        if (boardCompleted && tabletCompleted) {
+            // всё "Готово" — радостный Дед Мороз с подарком
             img = SANTA_HAPPY_IMG;
             text = "Ура! Котик всё сделал — Дед Мороз приготовил подарок!";
         } else if (started) {
@@ -1139,7 +1073,7 @@ boardBtn.addEventListener("click", () => {
     saveState();
     updateUI();
 
-    openModal(boardModal);
+    boardModal.classList.add("active");
 })
 
 // Открываем модалку "Работать на планшете"
@@ -1154,29 +1088,28 @@ tabletBtn.addEventListener("click", () => {
     saveState();
     updateUI();
 
-    openModal(tabletModal);
+    tabletModal.classList.add("active");
 });
 
-// Открываем модалку "Поиграть"
 playBtn.addEventListener("click", () => {
     if (!playIframe.src || playIframe.src === "about:blank") {
         playIframe.src = PLAY_GAME_URL;
     }
-
+    
     // автоматически считаем, что игра начата
-    playTried = true;
+    played = true;
     saveState();
     updateUI();
 
-    openModal(playModal);
+    playModal.classList.add("active");
 });
 
 
-    boardCloseBtn.addEventListener("click", () => closeModal(boardModal));
+    boardCloseBtn.addEventListener("click", () => boardModal.classList.remove("active"));
     tabletCloseBtn.addEventListener("click", () =>
-        closeModal(tabletModal)
+        tabletModal.classList.remove("active")
     );
-    playCloseBtn.addEventListener("click", () => closeModal(playModal));
+    playCloseBtn.addEventListener("click", () => playModal.classList.remove("active"));
 
     [boardModal, tabletModal, playModal].forEach((modal) => {
         modal.addEventListener("click", (e) => {
@@ -1191,23 +1124,20 @@ playBtn.addEventListener("click", () => {
     let text = "";
     let imageUrl = "";
 
-    const started = boardTried || tabletTried || playTried || played;
-    const allDone = boardCompleted && tabletCompleted && played;
-
-    if (!started) {
+    if (!boardTried && !tabletTried) {
         // ничего не делали
         text =
-            "Дед Мороз огорчён: «Ты совсем не занимался. Только играть — это не подготовка. В следующий раз нужно обязательно поработать у доски, на планшете и пройти игру в телефоне.»";
+            "Дед Мороз огорчён: «Ты совсем не занимался. Только игра — мало! В следующий раз нужно обязательно поработать у доски или на планшете.»";
         imageUrl = TEACHER_IMG_STRICT;
-    } else if (!allDone) {
-        // что-то начали, но не всё завершили
+    } else if ((boardTried || tabletTried) && !(boardCompleted && tabletCompleted)) {
+        // что-то начали, но есть только «В процессе»
         text =
-            "Дед Мороз расстроился: «Ты уже начал — это здорово! Но до подарка не хватает финального рывка. Доведи до конца: у доски, на планшете и в телефоне — и подарок твой.»";
+            "Дед Мороз расстроился: «Ты уже сделал шаг в сторону учебы. Но чтобы стать по-настоящему сильным, надо чуть больше усердия. Я верю, что в следующий раз ты справишься!»";
         imageUrl = TEACHER_IMG_SOFT;
-    } else {
-        // всё «Готово»
+    } else if (boardCompleted && tabletCompleted) {
+        // обе работы «Готово»
         text =
-            "🎉 Дед Мороз приготовил подарок: «Браво! Ты отлично поработал и у доски, и на планшете, и в телефоне. Ты настоящий молодец! Держи подарок.»";
+            "🎉 Дед Мороз приготовил подарок: «Браво! Ты отлично поработал и у доски, и на планшете. Ты настоящий молодец! Держи подарок.»";
         imageUrl = TEACHER_IMG_HAPPY;
     }
 
@@ -1229,7 +1159,7 @@ playBtn.addEventListener("click", () => {
 
     restartBtn.addEventListener("click", () => {
         localStorage.removeItem("kittenGameState");
-        boardTried = boardCompleted = tabletTried = tabletCompleted = playTried = played = false;
+        boardTried = boardCompleted = tabletTried = tabletCompleted = played = false;
         hideAllScenes();
         classroomImg.classList.remove("hidden");
         endingOverlay.classList.remove("active");
@@ -1252,7 +1182,6 @@ playBtn.addEventListener("click", () => {
             tabletTried = true;
             tabletCompleted = true;
         } else if (type === "played") {
-            playTried = true;
             played = true;
         } else {
             return;
